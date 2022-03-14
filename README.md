@@ -1,245 +1,261 @@
-# 주식시장 시세 사이트
-http://investingqqq.netlify.app/
+# 칼로리 계산 웹사이트
+https://nutrition365.netlify.app/
 
 ## 목차
 1. [개요](#개요)
 2. [과정](#과정)  
-  2.1. [Axios로 데이터 받아오기](#axios로-데이터-받아오기)  
-  2.2. [필요한 데이터 가공](#필요한-데이터-가공)  
-  2.3. [차트에 데이터 넣기](#차트에-데이터-넣기)  
+  2.1. [검색기능 만들기](#검색기능-만들기)  
+  2.2. [검색한 음식 추가하기](#검색한-음식-추가하기)  
+  2.3. [선택한 음식 삭제하기](#선택한-음식-삭제하기)  
+  2.4. [합산 영양소 데이터 만들기](#합산-영양소-데이터-만들기)  
   2.4. [표 만들기](#표-만들기)  
   2.5. [번역](#번역)  
 3. [사용한 라이브러리](#사용한-라이브러리)
 4. 
 ## 개요
-React, Axios, Nutritionix API를 사용한 칼로리 계산 웹사이트입니다.
-![제목 없음](https://user-images.githubusercontent.com/37141223/147278046-f695d191-5496-4217-9764-418e2cd45156.png)
+React, Axios, Nutritionix API를 사용한 칼로리 계산 웹사이트입니다. 아침, 점심, 저녁 별로 음식을 추가할 수 있으며 칼로리와 영양소가 계산되어 차트에 표시됩니다.
+![제목 없음](https://user-images.githubusercontent.com/37141223/158120740-dc533ba9-7daf-4bde-84dd-043c6b161eb4.png)
 
-확진자 추이와 최근 동향 차트입니다. 최근 동향은 7일간을 표시합니다.
-![제목 없음](https://user-images.githubusercontent.com/37141223/147287373-f9a4290a-a048-4cee-980e-f6db4c4f0123.png)
+Add 버튼을 누르면 음식을 추가할 수 있습니다.
+![제목 없음](https://user-images.githubusercontent.com/37141223/158121314-ca8819f8-3c0c-4f5b-be71-01e7c1152b0b.png)
 
-국가별 현황표 입니다. 누적 확진자, 누적 사망자, 누적 격리자, 누적 완치자, 치명률을 표시합니다.
-![제목 없음](https://user-images.githubusercontent.com/37141223/147287926-f5bd47be-ed3f-4ec4-ade6-2b57dba2aa74.png)
+음식을 추가하면 칼로리와 여러가지 영양소가 표시됩니다.
+![제목 없음](https://user-images.githubusercontent.com/37141223/158121536-7eb21b06-e524-4e6c-8771-c62ceda8f6ee.png)
 
 ## 과정
-### Axios로 데이터 받아오기
-`useEffect`는 axios로 api 데이터를 받습니다. 데이터는 `useState`의 `data` 변수로 들어갑니다.
+### 검색기능 만들기
+음식을 입력 후 엔터나 검색을 클릭하면 useState를 사용해서 입력한 값이 `food` 변수로 들어갑니다.  
+`useEffect`는 axios post형식으로 요청하여 `food`의 api 데이터를 받습니다. 데이터는 `useState`의 `data` 변수로 들어갑니다. 
 ```javascript
 useEffect(()=>{
-  axios.get('https://api.covid19api.com/total/dayone/country/'+props.country)
-            .then(res =>{
-              setData(res.data);
-              setLoading(false);
-            })
-  },[props])
-```
-### 필요한 데이터 가공
-대시보드에 표시될 수치 데이터입니다. `reduce`함수는 원하는 분류들을 새 배열에 넣어주고 `map`함수는 한가지 분류로만 이루어진 배열을 만듭니다.
-```javascript
-const cardData = Data.reduce(function(acc, cur){
-  const confirmed = cur.Confirmed;
-  const active = cur.Active;
-  const deaths = cur.Deaths;
-  const recovered = cur.Recovered;
-  const date = cur.Date;
-acc.push({confirmed, active, deaths, recovered, date})
-  return acc;
-}, [])
-const cardConfirmed = cardData.map(function(item){
-  return item.confirmed;
-})
-const cardActive = cardData.map(function(item){
-  return item.active;
-})
-const cardDeaths = cardData.map(function(item){
-  return item.deaths;
-})
-const cardRecovered = cardData.map(function(item){
-  return item.recovered;
-})
-const cardDate = cardData.map(function(item){
-  return item.date;
-})
-```
-차트에 들어갈 데이터입니다. 데이터는 동일하게 `reduce`와 `map`함수로 정리됩니다.
-```javascript
-const arr = Data.reduce(function(acc, cur){
-    const currentDate = new Date(cur.Date);
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const date = currentDate.getDate();
-    const confirmed = cur.Confirmed;
-    const active = cur.Active;
-    const deaths = cur.Deaths;
-    const recovered = cur.Recovered;
-    if(date === 1){
-      acc.push({year, month, date, confirmed, active, deaths, recovered, currentDate:cur.Date})
-    }
-  return acc;
-}, [])
-const confirmed = arr.map(function(item){
-  return item.confirmed;
-})
-const recentConfirmed = cardConfirmed.slice(-9, -1);
-const getToday = recentConfirmed.map(function(item, index, array){
-    const arr = array[index+1]-array[index];
-  return arr
-})
-const recentMovement =getToday.slice(0,7);
-const active = arr.map(function(item){
-  return item.active;
-})
-const deaths = arr.map(function(item){
-  return item.deaths;
-})
-const recovered = arr.map(function(item){
-  return item.recovered;
-})
-const currentDate = arr.map(function(item){
-  return item.currentDate;
-})
-```
-### 차트에 데이터 넣기
-`apexcharts` 라이브러리를 사용한 area 차트입니다. 분류해놓은 배열들이 각각 data에 들어갑니다. 차트 옵션중에서는 `yaxis`->`labes` 단위가 1000명기준으로 변경되었습니다.
-```javascript
-const series1 = [{
-  name: '확진자',
-  data: confirmed
-}, {
-  name: '격리자',
-  data: active
-}];
-const series2 = [{
-  name: '사망자',
-  data: deaths
-}]
-const series3 = [{
-  name: '일일 확진자',
-  data: recentMovement
-}];
-const options = {
-  chart: {
-    height: 350,
-    type: 'area',
-    toolbar: {
-      show: false}
-  },
-  dataLabels: {
-    enabled: false
-  },
-  stroke: {
-    curve: 'smooth'
-  },
-  xaxis: {
-    type: 'datetime',
-    categories: currentDate
-  },
-  yaxis: {
-    labels: {
-      formatter: function (value) {
-        return value/1000 + "K";
+  axios.post('https://trackapi.nutritionix.com/v2/natural/nutrients', {"query":`${food}`} ,{
+    headers: {
+      'x-app-id': '272a6433',
+      'x-app-key': 'a4df3a4b2906a44557ec176501f6825c'
       }
-    },
-  },
-  tooltip: {
-    x: {
-      format: 'yy/MM/dd'
-    },
-    y: {
-      formatter: function(value) {
-        return value
-      }
+  })
+  .then(res=>{
+    setData(res.data)
+    setLoading(true);
+  })
+}, [enter])
+
+const onChange =(e)=>{
+  setInput(e.target.value);
+  setText(e.target.value);
+}
+const onChangeNumber =(e)=>{
+  setCount(e.target.value);
+}
+const handleKeyPress =(e)=>{
+  if(e.key === 'Enter'){
+    if(input === ''){
+      alert('입력해주세요.')
+    }else{
+      setFood(text);
+      setAddCurrent(true);
+      setEnter(enter+1);
+      setLoading(false);
     }
-  },
+  }
+}
+const onSearch =()=>{
+  setFood(text);
+  setAddCurrent(true);
+  setEnter(enter+1);
+  setLoading(false);
 }
 ```
-### 표 만들기
-표 데이터는 각각 `map`함수를 사용해서 `<div>`태그로  카테고리 아래로 쭉 나열됩니다. 국가명에 t는 아래 후술하는 `i18next`라이브러리의 문법입니다.
+### 검색한 음식 추가하기
+음식을 추가하면 `foodData`에 현재 음식의 영양소의 배열이 들어오게 되고 `concat`함수는 `foodData`를 `arr`배열에 추가합니다. `arr`배열에는 음식을 추가할 때마다 `foodData` 배열이 추가됩니다.  
+아침인지 점심인지 저녁인지 `if`문으로 나누어 각각의 배열에 `foodData`가 들어가게 되고 그 배열은 추가한 음식의 목록을 형성합니다. 
 ```javascript
-<div className={styles.countryName}>
-    <div className={styles.category}>국가명</div>
-    {props.data.map(el => {
-        return (<div key={el.country} className={styles.country}>
-            {t(el.country)}
-        </div>)
-    })}
-</div>
-<div className={styles.cases}>
-    <div className={styles.category}>확진자</div>
-    {props.data.map(el => {
-        return (<div key={el.country} className={styles.country}>
-            {el.cases}
-        </div>)
-    })}
-</div>
-<div className={styles.deaths}>
-    <div className={styles.category}>사망자</div>
-    {props.data.map(el => {
-        return (<div key={el.country} className={styles.country}>
-            {el.deaths}
-        </div>)
-    })}
-</div>
-<div className={styles.active}>
-    <div className={styles.category}>격리자</div>
-    {props.data.map(el => {
-        return (<div key={el.country} className={styles.country}>
-            {el.active}
-        </div>)
-    })}
-</div>
-<div className={styles.recovered}>
-    <div className={styles.category}>완치자</div>
-    {props.data.map(el => {
-        return (<div key={el.country} className={styles.country}>
-            {el.recovered}
-        </div>)
-    })}
-</div>
-<div className={styles.critical}>
-    <div className={styles.category}>치명률</div>
-    {props.data.map(el => {
-        return (<div key={el.country} className={styles.country}>
-            {Math.floor(el.deaths / el.cases * 1000)/10}%
-        </div>)
-    })}
-</div>
-```
-### 번역
-데이터의 국가명은 영어였기때문에 `i18next` 라이브러리로 한글명을 대응시켰습니다.
-```javascript
-i18n
-  .use(initReactI18next)
-  .init({
-    resources: {
-      en: {
-        translation: {
-            "USA": '미국',
-            "India": '인도',
-            "Brazil": '브라질',
-            "Russia": '러시아',
-            "France": '프랑스',
-            "UK": '영국',
-            "Turkey": '터키',
-            "Argentina": '아르헨티나',
-            "Colombia": '콜롬비아',
-            "Spain": '스페인',
-            "Italy": '이탈리아',
-            "Iran": '이란',
-            "Indonesia": '인도네시아',
-            "Germany": '독일',
-            ...
-          }
-      }
-    },
-    lng: "en",
-    fallbackLng: "en",
-
-    interpolation: {
-      escapeValue: false
+const Add =()=>{
+  if(input === ''){
+    alert('입력해주세요.')
+  }else{
+    const foodData = {
+      food_name : data.foods?.[0].food_name,
+      calories : data.foods?.[0].nf_calories * count,
+      cholesterol : data.foods?.[0].nf_cholesterol,
+      dietary_fiber : data.foods?.[0].nf_dietary_fiber,
+      potassium : data.foods?.[0].nf_potassium,
+      protein : data.foods?.[0].nf_protein,
+      saturated_fat : data.foods?.[0].nf_saturated_fat,
+      sodium : data.foods?.[0].nf_sodium,
+      total_carbohydrate : data.foods?.[0].nf_total_carbohydrate,
+      total_fat : data.foods?.[0].nf_total_fat,
+      calcium : data.foods?.[0].full_nutrients?.[19].value,
+      id : data.foods?.[0].consumed_at,
+      count : count,
     }
-  });
+    setArr(arr.concat(foodData));
+    console.log(data.foods)
+    if(time==='breakfast'){
+      setBreakfast(breakfast.concat(foodData));
+    }
+    if(time==='lunch'){
+      setLunch(lunch.concat(foodData));
+    }
+    if(time==='dinner'){
+      setDinner(dinner.concat(foodData));
+    }
+    setPop(false);
+    setInput('');
+    setLoading(false);
+    setCount(1);
+    setAddCurrent(false);
+  }
+}
 ```
+### 선택한 음식 삭제하기
+추가한 음식 목록에서 `delete`버튼을 누르면 삭제가 되는데 이때 `filter`함수는 선택한 음식의 `id`를 제외한 나머지 배열들만 반환하여 목록을 형성합니다.
+```javascript
+const onRemove =(item)=>{
+    setArr(arr.filter(cur => cur.id !== item.id));
+    setBreakfast(breakfast.filter(cur => cur.id !== item.id));
+    setLunch(lunch.filter(cur => cur.id !== item.id));
+    setDinner(dinner.filter(cur => cur.id !== item.id));
+}
+```
+### 합산 영양소 데이터 만들기
+`reduce`함수는 `arr`배열의 각 영양소의 누적 합산결과를 반환합니다.
+```javascript
+const calories = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.calories) * 100)/100
+},0)
+const cholesterol = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.cholesterol) * 100)/100
+},0)
+const dietary_fiber = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.dietary_fiber) * 100)/100
+},0)
+const potassium = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.potassium) * 100)/100
+},0)
+const protein = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.protein) * 100)/100
+},0)
+const saturated_fat = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.saturated_fat) * 100)/100
+},0)
+const sodium = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.sodium) * 100)/100
+},0)
+const total_carbohydrate = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.total_carbohydrate) * 100)/100
+},0)
+const total_fat = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.total_fat) * 100)/100
+},0)
+const calcium = arr.reduce((acc, cur)=>{
+  return Math.round((acc + cur.calcium) * 100)/100
+},0)
+```
+### 차트에 데이터 넣기
+최종 합산된 영양소들은 차트 옵션의 `data`로 들어갑니다.
+```javascript
+const state = {
+  series: [{
+  name: 'carbohydrate',
+  data: [total_carbohydrate, 5]
+}, {
+  name: 'protein',
+  data: [protein, 3]
+}, {
+  name: 'fat',
+  data: [total_fat, 2]
+}],
+  chart: {
+  type: 'bar',
+  stacked: true,
+  stackType: '100%',
+  toolbar:{
+    show: false,
+  }
+},
+plotOptions: {
+  bar: {
+    horizontal: true,
+    barHeight: '10%',
+  },
+},
+colors: ['#2658FC', '#6186FF', '#26E7A6'],
+grid:{
+  show: false,
+},
+xaxis: {
+  categories: ['current', 'recommend'],
+  show: false,
+},
+tooltip: {
+  y: {
+    formatter: function (val) {
+      return val + "g"
+    }
+  }
+},
+fill: {
+  opacity: 1
 
+},
+legend: {
+  position: 'bottom',
+  horizontalAlign: 'center',
+}
+};
+
+const state2 = {
+  series: [{
+    name: 'status',
+    data: [total_carbohydrate, protein, dietary_fiber, saturated_fat, total_fat, potassium/1000, sodium/1000, saturated_fat, calcium/1000]
+    }],
+  chart: {
+  type: 'bar',
+  events: {
+    click: function(chart, w, e) {
+      // console.log(chart, w, e)
+    }
+  },
+  toolbar: {
+    show: false,
+  }
+},
+colors: ['#003AF9'],
+grid: {
+  show: false,
+},
+plotOptions: {
+  bar: {
+    columnWidth: '15%',
+    distributed: true,
+  }
+},
+dataLabels: {
+  enabled: false
+},
+legend: {
+  show: false
+},
+tooltip: {
+  y: {
+    formatter: function (val) {
+      return Math.round(val*100)/100 + "g"
+    }
+  }
+},
+xaxis: {
+  categories: ['carbohydrate', 'protein', 'dietary fiber', 'saturated fat', 'fat', 'potassium', 'sodium', 'saturated fat', 'calcium'],
+  labels: {
+    style: {
+      fontSize: '12px'
+    }
+  }
+},
+yaxis: {
+  show: false,
+}
+};
+```
 ## 사용한 라이브러리
-`react` `axios` `react-router-dom` `react-bootstrap` `apexcharts` `i18next`
+`react` `axios` `react-bootstrap` `apexcharts`
